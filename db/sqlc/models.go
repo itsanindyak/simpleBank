@@ -5,23 +5,23 @@
 package db
 
 import (
-	"github.com/jackc/pgx/v5/pgtype"
+	"time"
 )
 
 type Accounts struct {
-	ID        int64              `json:"id"`
-	Owner     string             `json:"owner"`
-	Balance   int64              `json:"balance"`
-	Currency  string             `json:"currency"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	ID        int64     `json:"id"`
+	Owner     string    `json:"owner"`
+	Balance   int64     `json:"balance"`
+	Currency  string    `json:"currency"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type Entries struct {
 	ID         int64 `json:"id"`
 	AccountsID int64 `json:"accounts_id"`
 	// Can be negative or positive
-	Amount    int64              `json:"amount"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	Amount    int64     `json:"amount"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type Transfers struct {
@@ -29,6 +29,6 @@ type Transfers struct {
 	FromAccountsID int64 `json:"from_accounts_id"`
 	ToAccountsID   int64 `json:"to_accounts_id"`
 	// Must be positive
-	Amount    int64              `json:"amount"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	Amount    int64     `json:"amount"`
+	CreatedAt time.Time `json:"created_at"`
 }
