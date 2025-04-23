@@ -5,12 +5,15 @@ createdb:
 dropdb:
 	docker exec -it postgres psql -U root -d postgres -c "SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = 'simple_bank' AND pid <> pg_backend_pid();"
 	docker exec -it postgres dropdb -U root simple_bank
-
+migration:
+	migrate create -ext sql -dir db/migration -seq $(name)
 migrateup:
 	migrate -path db/migration -database "postgresql://root:root@localhost:5432/simple_bank?sslmode=disable" -verbose up
 migratedown:
 	migrate -path db/migration -database "postgresql://root:root@localhost:5432/simple_bank?sslmode=disable" -verbose down
 sqlc:
 	sqlc generate
+test:
+	go test -v -cover ./...
 
-.PHONY: postgresql createdb dropdb migrateup migratedown sqlc
+.PHONY: postgresql createdb dropdb migrateup migratedown sqlc test
