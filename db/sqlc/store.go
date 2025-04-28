@@ -40,8 +40,6 @@ func (store *Store) execTx(ctx context.Context, fn func(*Queries) error) error {
 
 }
 
-
-
 // Transfer money one account to another account
 // transfer record --> entry record in to_account ---> entry record in from_account ---> update account balance in both account
 
@@ -52,20 +50,74 @@ type TransferTxParams struct {
 }
 
 type TransferTxResult struct {
-	Transfer   *Transfers `json:"transfer"`
-	FromAccount Accounts  `json:"from_account"`
-	ToAccount   Accounts  `json:"to_account"`
-	FromEntry   *Entries  `json:"from_entry"`
-	ToEntry     *Entries  `json:"to_entry"`
+	Transfer    *Transfers `json:"transfer"`
+	FromAccount *Accounts  `json:"from_account"`
+	ToAccount   *Accounts  `json:"to_account"`
+	FromEntry   *Entries   `json:"from_entry"`
+	ToEntry     *Entries   `json:"to_entry"`
 }
 
 func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error) {
-		var result TransferTxResult
+	var result TransferTxResult
 
-		err := store.execTx(ctx,func(q *Queries) error {
-			
-			return nil
+	err := store.execTx(ctx, func(q *Queries) error {
+		var err error
+
+		// create transfer
+
+		result.Transfer, err = q.CreateTransfer(ctx, CreateTransferParams{
+			FromAccountsID: arg.FromAccountId,
+			ToAccountsID:   arg.ToAccountId,
+			Amount:         arg.Amount,
 		})
 
-		return result,err
+		if err != nil {
+			return err
+		}
+
+		// create entry with -ve for from account
+
+		result.FromEntry, err = q.CreateEntry(ctx, CreateEntryParams{
+			AccountsID: arg.FromAccountId,
+			Amount:     -arg.Amount,
+		})
+
+		if err != nil {
+			return err
+		}
+		// create entry with +ve for to_account
+
+		result.ToEntry, err = q.CreateEntry(ctx, CreateEntryParams{
+			AccountsID: arg.ToAccountId,
+			Amount:     arg.Amount,
+		})
+
+		if err != nil {
+			return err
+		}
+
+		result.FromAccount, err = q.UpdateAccountBalance(ctx, UpdateAccountBalanceParams{
+			ID:     arg.FromAccountId,
+			Amount: -arg.Amount,
+		})
+
+		if err != nil {
+			return err
+		}
+
+		// update balance in to_account
+
+		result.ToAccount, err = q.UpdateAccountBalance(ctx, UpdateAccountBalanceParams{
+			ID:      arg.ToAccountId,
+			Amount:  arg.Amount,
+		})
+
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return result, err
 }
